@@ -11,29 +11,40 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import kotlin.math.abs
 
 private const val BankCardAspectRatio = 1.5819f
 
 @Composable
-internal fun Card(modifier: Modifier = Modifier) {
+internal fun Card(
+    rotationAngle: Float,
+    modifier: Modifier = Modifier,
+) {
     val sideModifier =
         modifier
             .widthIn(min = 240.dp)
             .aspectRatio(BankCardAspectRatio)
+            .graphicsLayer {
+                rotationY = rotationAngle
+                cameraDistance = 12.dp.toPx()
+            }
             .clip(shape = RoundedCornerShape(20.dp))
+
+    val normalizedAngle = abs(rotationAngle % 360f)
+    val needRenderBackSide = normalizedAngle in 90f..270f
 
     Box {
         Box(
             modifier = sideModifier
                 .graphicsLayer {
-                    alpha = 1f
+                    alpha = if (needRenderBackSide) 0f else 1f
                 }
                 .background(Color.Red),
         )
         Box(
             modifier = sideModifier
                 .graphicsLayer {
-                    alpha = 0f
+                    alpha = if (needRenderBackSide) 1f else 0f
                     rotationY = 180f
                 }
                 .background(Color.Blue),

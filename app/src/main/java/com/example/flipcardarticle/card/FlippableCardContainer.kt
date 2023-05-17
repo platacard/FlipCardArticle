@@ -19,6 +19,7 @@ internal fun FlippableCardContainer() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 40.dp),
+            rotationAngle = 1200f,
         )
     }
 }
