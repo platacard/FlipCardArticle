@@ -1,6 +1,9 @@
 package com.example.flipcardarticle.card
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.widthIn
@@ -18,6 +21,7 @@ private const val BankCardAspectRatio = 1.5819f
 @Composable
 internal fun Card(
     rotationAngle: Float,
+    interactionSource: MutableInteractionSource,
     modifier: Modifier = Modifier,
 ) {
     val sideModifier =
@@ -29,6 +33,11 @@ internal fun Card(
                 cameraDistance = 12.dp.toPx()
             }
             .clip(shape = RoundedCornerShape(20.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                onClick = {},
+            )
 
     val normalizedAngle = abs(rotationAngle % 360f)
     val needRenderBackSide = normalizedAngle in 90f..270f
