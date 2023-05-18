@@ -1,5 +1,7 @@
 package com.example.flipcardarticle.card
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
@@ -32,7 +34,12 @@ internal fun FlippableCardContainer() {
 
     var targetAngle by remember { mutableStateOf(0f) }
 
-    val frontSideIsShowing = abs(targetAngle.normalizeAngle()) !in 90f..270f
+    val rotation by animateFloatAsState(
+        targetValue = targetAngle,
+        animationSpec = tween(1000),
+    )
+
+    val frontSideIsShowing = abs(rotation.normalizeAngle()) !in 90f..270f
 
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val cardWidth = screenWidth.dp - CardHorizontalPadding * 2
@@ -64,7 +71,7 @@ internal fun FlippableCardContainer() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = CardHorizontalPadding),
-            rotationAngle = targetAngle,
+            rotationAngle = rotation,
             interactionSource = cardInteractionSource,
         )
     }
