@@ -1,7 +1,11 @@
 package com.example.flipcardarticle.card
 
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
@@ -18,11 +22,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.example.flipcardarticle.utils.normalizeAngle
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlin.math.abs
+import kotlin.math.sign
 
 private val CardHorizontalPadding = 40.dp
 
@@ -34,15 +40,21 @@ internal fun FlippableCardContainer() {
 
     var targetAngle by remember { mutableStateOf(0f) }
 
+    var dragInProgress by remember { mutableStateOf(false) }
+
     val rotation by animateFloatAsState(
         targetValue = targetAngle,
-        animationSpec = tween(1000),
+        animationSpec = spring(
+            stiffness = if (dragInProgress) Spring.StiffnessHigh else Spring.StiffnessLow,
+        ),
     )
 
     val frontSideIsShowing = abs(rotation.normalizeAngle()) !in 90f..270f
 
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val cardWidth = screenWidth.dp - CardHorizontalPadding * 2
+
+    val diff = 180f / cardWidth.value
 
     LaunchedEffect(frontSideIsShowing) {
         cardInteractionSource.interactions
@@ -70,13 +82,50 @@ internal fun FlippableCardContainer() {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = CardHorizontalPadding),
+                .padding(horizontal = CardHorizontalPadding)
+                .draggable(
+                    orientation = Orientation.Horizontal,
+                    onDragStarted = {
+                        dragInProgress = true
+                    },
+                    onDragStopped = { lastVelocity ->
+                        dragInProgress = false
+                        targetAngle = targetAngle.findNearAngle(velocity = lastVelocity)
+                    },
+                    state = rememberDraggableState(
+                        onDelta = { offsetX ->
+                            val calculatedAngle = calculateAngle(offsetX, density, diff)
+                            targetAngle += calculatedAngle
+                        },
+                    ),
+                ),
             rotationAngle = rotation,
             interactionSource = cardInteractionSource,
         )
     }
 }
 
-internal fun Float.findNextAngle(spinClockwise: Boolean): Float {
+private fun Float.findNextAngle(spinClockwise: Boolean): Float {
     return if (spinClockwise) this - 180f else this + 180f
+}
+
+private fun Float.findNearAngle(velocity: Float): Float {
+    val velocityAddition = if (abs(velocity) > 1000) {
+        90f * velocity.sign
+    } else {
+        0f
+    }
+    val normalizedAngle = this.normalizeAngle() + velocityAddition
+    val minimalAngle = (this / 360f).toInt() * 360f
+    return when {
+        normalizedAngle in -90f..90f -> minimalAngle
+        abs(normalizedAngle) >= 270f -> minimalAngle + 360f * this.sign
+        abs(normalizedAngle) >= 90f -> minimalAngle + 180f * this.sign
+        else -> 0f
+    }
+}
+
+private fun calculateAngle(offsetX: Float, density: Density, diff: Float): Float {
+    val offsetInDp = with(density) { offsetX.toDp() }
+    return offsetInDp.value * diff
 }
