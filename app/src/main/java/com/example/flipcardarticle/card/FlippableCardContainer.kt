@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,7 +50,15 @@ internal fun FlippableCardContainer() {
         ),
     )
 
-    val frontSideIsShowing = abs(rotation.normalizeAngle()) !in 90f..270f
+    val rotationAngleState = remember {
+        derivedStateOf { rotation }
+    }
+
+    val frontSideIsShowing by remember {
+        derivedStateOf {
+            abs(rotationAngleState.value.normalizeAngle()) !in 90f..270f
+        }
+    }
 
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val cardWidth = screenWidth.dp - CardHorizontalPadding * 2
@@ -79,27 +88,32 @@ internal fun FlippableCardContainer() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
+        val draggableState = rememberDraggableState(
+            onDelta = { offsetX ->
+                val calculatedAngle = calculateAngle(offsetX, density, diff)
+                targetAngle += calculatedAngle
+            },
+        )
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = CardHorizontalPadding)
-                .draggable(
-                    orientation = Orientation.Horizontal,
-                    onDragStarted = {
-                        dragInProgress = true
+                .then(
+                    remember {
+                        Modifier.draggable(
+                            orientation = Orientation.Horizontal,
+                            onDragStarted = {
+                                dragInProgress = true
+                            },
+                            onDragStopped = { lastVelocity ->
+                                dragInProgress = false
+                                targetAngle = targetAngle.findNearAngle(velocity = lastVelocity)
+                            },
+                            state = draggableState,
+                        )
                     },
-                    onDragStopped = { lastVelocity ->
-                        dragInProgress = false
-                        targetAngle = targetAngle.findNearAngle(velocity = lastVelocity)
-                    },
-                    state = rememberDraggableState(
-                        onDelta = { offsetX ->
-                            val calculatedAngle = calculateAngle(offsetX, density, diff)
-                            targetAngle += calculatedAngle
-                        },
-                    ),
                 ),
-            rotationAngle = rotation,
+            rotationAngle = rotationAngleState,
             interactionSource = cardInteractionSource,
         )
     }
