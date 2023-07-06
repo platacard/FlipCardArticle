@@ -9,9 +9,8 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -95,15 +94,14 @@ internal fun FlippableCardContainer() {
                 targetAngle += calculatedAngle
             },
         )
-        Calendar(
+        Card(
             modifier = Modifier
-                .padding(horizontal = 80.dp)
-                .aspectRatio(0.7f)
-                .offset(y = 150.dp)
+                .fillMaxWidth()
+                .padding(horizontal = CardHorizontalPadding)
                 .then(
                     remember {
                         Modifier.draggable(
-                            orientation = Orientation.Vertical,
+                            orientation = Orientation.Horizontal,
                             onDragStarted = {
                                 dragInProgress = true
                             },
@@ -115,7 +113,8 @@ internal fun FlippableCardContainer() {
                         )
                     },
                 ),
-            rotationAngleState = rotationAngleState,
+            rotationAngle = rotationAngleState,
+            interactionSource = cardInteractionSource,
         )
     }
 }
